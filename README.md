@@ -1,6 +1,8 @@
 # Uband python S2 项目团队--random
-人物志
+##团队介绍
+Team 9, four girls from different areas and professions.
 
+##人物志
 a1:A11167-xxx 
 xxx
 
