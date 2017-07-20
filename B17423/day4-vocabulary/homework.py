@@ -100,8 +100,16 @@ def print_to_csv(volcaulay_list, to_file_path, rate):
         nfile.write("%s,%s,%0.2f\n" % (val[0], str(val[1]),rate[val]))
     nfile.close()
 
+def print_to_csv_no_rate(volcaulay_list, to_file_path):
+    nfile = open(to_file_path, 'w+')
+    for val in volcaulay_list:
+        nfile.write("%s,%s\n" % (val[0], str(val[1])))
+    nfile.close()
+
 def main():
     #1. 读取文本
+
+    is_rate = True   #是否算百分比
     words = read_files(get_file_from_folder('data1'))
     print ('获取了未格式化的单词 %d 个' % (len(words)))
 
@@ -113,17 +121,20 @@ def main():
     #3. 统计单词和排序
     word_list = statictcs_words(f_words)
 
+    if(is_rate):
     #获取词频
-    word_rate = get_rate(word_list, total_word_count)
+        word_rate = get_rate(word_list, total_word_count)
 
     # 截取这一部分的单词
-    start_and_end = [0.5, 0.7]
-    partition_words = cut_words(word_rate, start_and_end)
-    print(len(partition_words))
+        start_and_end = [0.5, 0.7]
+        partition_words = cut_words(word_rate, start_and_end)
+        print(len(partition_words))
 
     #4. 输出文件
-    print_to_csv(word_list, 'output/test.csv', word_rate)
+        print_to_csv(word_list, 'output/test.csv', word_rate)
 
+    else:
+        print_to_csv_no_rate(word_list, 'output/test.csv')
 
 if __name__ == "__main__":
     main()
