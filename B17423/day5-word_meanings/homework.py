@@ -2,6 +2,8 @@
 
 import codecs
 import os
+import csv
+import re
 
 #1. 读取文件
 #['aa', 'aaa-bbb-sds'] => ['aa', 'aaa', 'bbb', 'sds']
@@ -21,11 +23,24 @@ def read_file(file_path):
     lines = f.readlines()
     word_list = []
     for line in lines:
-        line = line.strip()
+        line = line.strip()   #移除首尾空格
         words = line.split(" ") #用空格分割
         words = word_split(words) #用-分割
         word_list.extend(words)
     return word_list
+
+#读取释义txt文件
+def read_meaning(file_path):
+    f = codecs.open(file_path, 'r', "utf-8")
+    lines = f.readlines()
+    dict = {}
+    for line in lines:
+        words = re.split(r'\s+', line)  #多个空格分割
+        key = words[0].strip()
+        value = words[1].strip()
+        dict[key] = value
+    return dict
+
 
 def get_file_from_folder(folder_path):
     file_paths = []
@@ -70,45 +85,53 @@ def statictcs_words(words):
             s_word_dict[word] = 1
     #排序
     sorted_dict = sorted(s_word_dict.items(), key=lambda d: d[1], reverse=True)
-    return sorted_dict
+    return sorted_dict   #tuple组成的list
+
+def tup2list(sorted_dict):
+    list_words = []
+    for tup_word in sorted_dict:  #tuple
+        list_word = [tup_word[0], tup_word[1]]
+        list_words.append(list_word)
+    return list_words   #list组成的list
 
 #获取词频
 def get_rate(word_list, total_count):
-    rate = {}
     current_count = 0
     for val in word_list:
         num = val[1]
         current_count = current_count + num
-        word_rate = (float(current_count)/total_count) * 100
-        rate[val] = word_rate
-    return rate
+        word_rate = round((float(current_count)/total_count) * 100, 2)   #保留两位小数
+        val.append(word_rate)   #rate加在每一个单词的后面
+    return word_list
+
+#添加释义
+def add_meaning(word_list, dictionary):
+    for word in word_list:
+        k = word[0]
+        if k in dictionary:
+            word.append(dictionary[k])
+    return word_list
 
 #截取单词
-def cut_words(word_rate, range):
-    start = range[0]*100
-    end = range[1]*100
+def cut_words(word_list, ranges):
+    start = ranges[0]*100
+    end = ranges[1]*100
     cut_list = []
-    for val in word_rate:
-        if((word_rate[val]>= start) and (word_rate[val]<= end)):
-            cut_list.append(val[0])
+    for val in word_list:
+        if((val[2]>= start) and (val[2]<= end)):
+            cut_list.append(val)
     return cut_list
 
 #4.输出成csv
-def print_to_csv(volcaulay_list, to_file_path, rate):
+def print_to_csv(volcaulay_list, to_file_path):
     nfile = open(to_file_path, 'w+')
+    swriter = csv.writer(nfile, dialect='excel')
     for val in volcaulay_list:
-        nfile.write("%s,%s,%0.2f\n" % (val[0], str(val[1]), rate[val]))
-    nfile.close()
-
-def print_to_csv_no_rate(volcaulay_list, to_file_path):
-    nfile = open(to_file_path, 'w+')
-    for val in volcaulay_list:
-        nfile.write("%s,%s\n" % (val[0], str(val[1])))
+        swriter.writerow(val)
     nfile.close()
 
 def main():
     #1. 读取文本
-
     is_rate = True   #是否算百分比
     words = read_files(get_file_from_folder('data1'))
     print ('获取了未格式化的单词 %d 个' % (len(words)))
@@ -119,22 +142,30 @@ def main():
     print ('获取了已经格式化的单词 %d 个' %(len(f_words)))
     
     #3. 统计单词和排序
-    word_list = statictcs_words(f_words)
+    tup_words = statictcs_words(f_words)
+
+    #tup2list
+    list_words = tup2list(tup_words)
 
     if(is_rate):
     #获取词频
-        word_rate = get_rate(word_list, total_word_count)
+        word_list = get_rate(list_words, total_word_count)
+
+    # read meaning  day5_homework
+        dictionary = read_meaning('8000-words.txt')
+        word_list = add_meaning(word_list, dictionary)
 
     # 截取这一部分的单词
         start_and_end = [0.5, 0.7]
-        partition_words = cut_words(word_rate, start_and_end)
+        partition_words = cut_words(word_list, start_and_end)
         print(len(partition_words))
 
     #4. 输出文件
-        print_to_csv(word_list, 'output/test.csv', word_rate)
+        print_to_csv(word_list, 'output/all.csv')
+        print_to_csv(partition_words, 'output/partition.csv')
 
     else:
-        print_to_csv_no_rate(word_list, 'output/test.csv')
+        print_to_csv(list_words, 'output/test.csv')
 
 if __name__ == "__main__":
     main()
